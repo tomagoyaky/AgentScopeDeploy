@@ -8,7 +8,7 @@ import agentscope
 from agentscope.agent import ReActAgent
 from agentscope.formatter import DashScopeMultiAgentFormatter
 from agentscope.message import Msg
-from agentscope.model import DashScopeChatModel
+from agentscope.model import OpenAIChatModel, DashScopeChatModel, AnthropicChatModel, GeminiChatModel, GeminiChatModel
 from agentscope.pipeline import MsgHub, sequential_pipeline
 
 agentscope.init(
@@ -29,9 +29,10 @@ def create_participant_agent(
             f"You're a {age}-year-old {career} named {name} and you're "
             f"a {character} person."
         ),
-        model=DashScopeChatModel(
-            model_name="qwen-max",
-            api_key=os.environ["DASHSCOPE_API_KEY"],
+       # 模型种类参考： https://doc.agentscope.io/zh_CN/tutorial/task_model.html
+        model=OpenAIChatModel(
+            model_name="deepseek-v1",
+            api_key=os.environ["LLM_API_KEY"],
             stream=True,
         ),
         # Use multiagent formatter because the multiple entities will

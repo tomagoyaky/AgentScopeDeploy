@@ -135,12 +135,21 @@ main() {
     log_info "Starting agentscope-runtime..."
     if [ "$1" == "single" ]; then
         log_info "Starting single agent chat..."
-        CMD "$dir_current/agent/SingleAgentScope.py"
+        CMD "$dir_current/agent/SingleModel.qwen-max.py"
+    elif [ "$1" == "single.deepseek" ]; then
+        log_info "Starting single deep seek agent chat..."
+        CMD "$dir_current/agent/SingleModel.deepseek.py"
+    elif [ "$1" == "single.streaming" ]; then
+        log_info "Starting single streaming agent chat..."
+        CMD "$dir_current/agent/SingleModel.qwen-trubo.stream.py"
+    elif [ "$1" == "single.thinking" ]; then
+        log_info "Starting single thinking agent chat..."
+        CMD "$dir_current/agent/SingleModel.qwen-trubo.thinking.py"
     elif [ "$1" == "multi" ]; then
         log_info "Starting multi-agent chat..."
         CMD "$dir_current/agent/MultiAgentScope.py"
     else
-        log_info "Usage: $0 {single|multi}"
+        log_info "Usage: $0 {single|single.deepseek|single.streaming|single.thinking|multi}"
         exit 1
     fi
 }
