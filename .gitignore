@@ -1,0 +1,4 @@
+workspace/
+.vscode/
+*.pyc
+__pycache__/
