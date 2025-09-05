@@ -54,15 +54,30 @@ git_agentscope_family() {
     cd "$dir_sources"
     if [ ! -d "agentscope" ]; then
         log_info "Adding agentscope submodules..."
-        git_submodule_add "https://github.com/agentscope-ai/agentscope.git" "agentscope"
+        if [ -f "$dir_sources/agentscope-main.zip" ]; then
+            unzip -o "$dir_sources/agentscope-main.zip" -d "$dir_sources"
+            mv "$dir_sources/agentscope-main" "$dir_sources/agentscope"
+        else
+            git_submodule_add "https://github.com/agentscope-ai/agentscope.git" "agentscope"
+        fi
     fi
     if [ ! -d "agentscope-runtime" ]; then
         log_info "Adding agentscope-runtime submodules..."
-        git_submodule_add "https://github.com/agentscope-ai/agentscope-runtime.git" "agentscope-runtime"
+        if [ -f "$dir_sources/agentscope-runtime-main.zip" ]; then
+            unzip -o "$dir_sources/agentscope-runtime-main.zip" -d "$dir_sources"
+            mv "$dir_sources/agentscope-runtime-main" "$dir_sources/agentscope-runtime"
+        else
+            git_submodule_add "https://github.com/agentscope-ai/agentscope-runtime.git" "agentscope-runtime"
+        fi
     fi
     if [ ! -d "agentscope-studio" ]; then
         log_info "Adding agentscope-studio submodules..."
-        git_submodule_add "https://github.com/agentscope-ai/agentscope-studio.git" "agentscope-studio"
+        if [ -f "$dir_sources/agentscope-studio-main.zip" ]; then
+            unzip -o "$dir_sources/agentscope-studio-main.zip" -d "$dir_sources"
+            mv "$dir_sources/agentscope-studio-main" "$dir_sources/agentscope-studio"
+        else
+            git_submodule_add "https://github.com/agentscope-ai/agentscope-studio.git" "agentscope-studio"
+        fi
     fi
     log_info "Ensuring .gitignore file exists..."
     if [ ! -f ".gitignore" ]; then
