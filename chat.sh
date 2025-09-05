@@ -3,13 +3,14 @@ clear
 set -e
 
 # ----------------------------------------------------------------------
-# Check for Python 3.13.5
-python_version_required="3.13.5"
-python_version=$(python3 --version 2>&1)
+# Check for Python 3.13
+python_version_required="3.13"
+python_version=$(python --version 2>&1)
 if [[ $python_version != Python\ ${python_version_required}* ]]; then
     echo "Python ${python_version_required} is required. Current version: $python_version"
     exit 1
 fi
+echo "Python version $python_version_required is OK."
 
 # ----------------------------------------------------------------------
 # Define directories
@@ -36,14 +37,19 @@ setup_python_venv() {
     cd "$dir_workspace"
     if [ ! -d "$dir_workspace/venv" ]; then
         log_info "Creating python virtual environment..."
-        python3 -m venv "$dir_workspace/venv"
+        python -m venv "$dir_workspace/venv"
     fi
     log_info "Activating python virtual environment..."
     source "$dir_workspace/venv/bin/activate"
 
+    if [ ! -f "$dir_status/pip.upgrade.set.ok.status" ]; then
+        $dir_venv/bin/pip install --upgrade pip
+        touch "$dir_status/pip.upgrade.set.ok.status"
+    fi
+
     if [ ! -f "$dir_status/pip.conf.set.ok.status" ]; then
         # add pip mirror to speed up pip install
-        pip config set global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+        $dir_venv/bin/pip config set global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
         touch "$dir_status/pip.conf.set.ok.status"
     else
         log_warn "pip mirror is already set."
@@ -76,30 +82,36 @@ check_env_file() {
 }
 fix_pip_dependencies() { 
     source "$dir_workspace/venv/bin/activate"
-    if [ ! -f "$dir_status/pip.fix.set.ok.status" ]; then
+    if [ ! -f "$dir_status/pip.fix.ok.status" ]; then
         # fix: agentscope-runtime 0.1.3 requires mcp<1.10.0,>=1.8.0, but you have mcp 1.13.1 which is incompatible.
         log_warn "Fixing mcp module..."
-        pip uninstall mcp -y
-        pip install "mcp<1.10.0,>=1.8.0" --upgrade --target=$dir_venv_site_packages
+        $dir_venv/bin/pip uninstall mcp -y
+        $dir_venv/bin/pip install "mcp<1.10.0,>=1.8.0" --upgrade --target=$dir_venv_site_packages
 
         # fix: ModuleNotFoundError: No module named 'anthropic._models'
         log_warn "Fixing anthropic module..."
-        pip install --upgrade --force-reinstall anthropic --target=$dir_venv_site_packages
+        $dir_venv/bin/pip install --upgrade --force-reinstall anthropic --target=$dir_venv_site_packages
 
         # fix: ModuleNotFoundError: No module named 'packaging'
         log_warn "Fixing packaging module..."
-        pip install --upgrade --force-reinstall packaging --target=$dir_venv_site_packages
-        touch "$dir_status/pip.fix.set.ok.status"
+        $dir_venv/bin/pip install --upgrade --force-reinstall packaging --target=$dir_venv_site_packages
+
+        # fix: ModuleNotFoundError: No module named 'protobuf'
+        log_warn "Fixing protobuf module..."
+        $dir_venv/bin/pip install --upgrade --force-reinstall protobuf --target=$dir_venv_site_packages
+
+        touch "$dir_status/pip.fix.ok.status"
     else
         log_warn "pip dependencies are already fixed."
     fi
 }
 CMD(){
-    local cmdInterpreter=$1
-    local cmdline=$2
-    local args="$3"
-    log_info "Executing command: [$cmdInterpreter $cmdline $args]"
-    "$cmdInterpreter" "$cmdline" "$args"
+    local cmdline=$1
+    local args="$2"
+    log_info "Executing command: [$cmdline $args]"
+    # export PYTHONPATH="$dir_venv_site_packages"
+    # log_info "PYTHONPATH: $PYTHONPATH"
+    $dir_venv/bin/python "$cmdline" "$args"
 }
 main() {
     cd $dir_current
@@ -123,10 +135,10 @@ main() {
     log_info "Starting agentscope-runtime..."
     if [ "$1" == "single" ]; then
         log_info "Starting single agent chat..."
-        CMD "$dir_venv/bin/python $dir_current/agent/SingleAgentScope.py"
+        CMD "$dir_current/agent/SingleAgentScope.py"
     elif [ "$1" == "multi" ]; then
         log_info "Starting multi-agent chat..."
-        CMD "$dir_venv/bin/python $dir_current/agent/MultiAgentScope.py"
+        CMD "$dir_current/agent/MultiAgentScope.py"
     else
         log_info "Usage: $0 {single|multi}"
         exit 1

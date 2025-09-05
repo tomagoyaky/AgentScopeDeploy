@@ -11,10 +11,10 @@ from agentscope.message import Msg
 from agentscope.model import DashScopeChatModel
 from agentscope.pipeline import MsgHub, sequential_pipeline
 
-# agentscope.init(
-#     # ...
-#     studio_url="http://localhost:3000"
-# )
+agentscope.init(
+    # ...
+    studio_url="http://localhost:3000"
+)
 
 def create_participant_agent(
     name: str,
@@ -81,5 +81,5 @@ async def main() -> None:
 
         # ...
 
-
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())

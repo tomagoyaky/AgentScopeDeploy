@@ -3,13 +3,14 @@ clear
 set -e
 
 # ----------------------------------------------------------------------
-# Check for Python 3.13.5
-python_version_required="3.13.5"
-python_version=$(python3 --version 2>&1)
+# Check for Python 3.13
+python_version_required="3.13"
+python_version=$(python --version 2>&1)
 if [[ $python_version != Python\ ${python_version_required}* ]]; then
     echo "Python ${python_version_required} is required. Current version: $python_version"
     exit 1
 fi
+echo "Python version $python_version_required is OK."
 
 # ----------------------------------------------------------------------
 # Define directories
@@ -91,36 +92,50 @@ git_agentscope_family() {
         log_info "sources/" >> .gitignore
     fi
 }
+setup_apt(){
+    sudo apt-get update
+    sudo apt autoremove -y
+    # fix: Error: Cannot find module 'python3-distutils' and  'python3-venv'
+    sudo apt-get install python3-all -y
+}
 setup_python_venv() {
     cd "$dir_workspace"
     if [ ! -d "$dir_workspace/venv" ]; then
         log_info "Creating python virtual environment..."
-        python3 -m venv "$dir_workspace/venv"
+        python -m venv "$dir_workspace/venv"
     fi
     log_info "Activating python virtual environment..."
     source "$dir_workspace/venv/bin/activate"
     # add pip mirror to speed up pip install
-    pip config set global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+    $dir_venv/bin/pip config set global.index-url https://mirrors.tuna.tsinghua.edu.cn/pypi/web/simple
+
+    if [ ! -f "$dir_status/pip.upgrade.set.ok.status" ]; then
+        $dir_venv/bin/pip install --upgrade pip
+        touch "$dir_status/pip.upgrade.set.ok.status"
+    fi
 }
 setup_agentscope() {
     cd "$dir_sources/agentscope"
     log_info "Installing agentscope..."
-    pip install -e . --upgrade --target=$dir_venv_site_packages
+    $dir_venv/bin/pip install -e . --upgrade --target=$dir_venv_site_packages
 }
 setup_agentscope_runtime() {
     cd "$dir_sources/agentscope-runtime"
     # Install core dependencies
     log_info "Installing agentscope-runtime..."
-    pip install -e . --upgrade --target=$dir_venv_site_packages
+    $dir_venv/bin/pip install -e . --upgrade --target=$dir_venv_site_packages
 
     # Install sandbox dependencies
     log_info "Installing agentscope-runtime sandbox dependencies..."
-    pip install -e ".[sandbox]" --upgrade --target=$dir_venv_site_packages
+    $dir_venv/bin/pip install -e ".[sandbox]" --upgrade --target=$dir_venv_site_packages
 }
 setup_agentscope_studio() {
     cd "$dir_sources/agentscope-studio"
+
     log_info "Installing agentscope-studio..."
+    # Install frontend dependencies
     npm install --force --verbose
+
     log_info "Starting agentscope-studio..."
     npm run dev &
     log_info "Waiting for agentscope-studio to start..."
@@ -131,8 +146,11 @@ fix_pip_dependencies() {
     source "$dir_workspace/venv/bin/activate"
     # fix: agentscope-runtime 0.1.3 requires mcp<1.10.0,>=1.8.0, but you have mcp 1.13.1 which is incompatible.
     log_warn "Fixing mcp module..."
-    pip uninstall mcp -y
-    pip install "mcp<1.10.0,>=1.8.0" --upgrade --target=$dir_venv_site_packages
+    $dir_venv/bin/pip uninstall mcp -y
+    $dir_venv/bin/pip install "mcp<1.10.0,>=1.8.0" --upgrade --target=$dir_venv_site_packages
+
+    # fix: ModuleNotFoundError: No module named 'distutils'
+    $dir_venv/bin/pip install setuptools --upgrade --target=$dir_venv_site_packages
 }
 main() {
     log_info "Setting up the project from git sources code ..."
@@ -148,14 +166,16 @@ main() {
     git_agentscope_family
     git_submodule_update
 
+    # Setup apt packages
+    setup_apt
+
     # Setup python virtual environment
     setup_python_venv
 
-    # Setup agentscope
     setup_agentscope
     setup_agentscope_runtime
-    setup_agentscope_studio
     fix_pip_dependencies
+    setup_agentscope_studio
 
     log_info "Setup completed successfully."
 
