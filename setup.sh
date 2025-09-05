@@ -3,11 +3,11 @@ clear
 set -e
 
 # ----------------------------------------------------------------------
-# Check for Python 3.12
-python_version_required="3.12"
+# Check for Python 3.13.5
+python_version_required="3.13.5"
 python_version=$(python3 --version 2>&1)
 if [[ $python_version != Python\ ${python_version_required}* ]]; then
-    log_info "Python ${python_version_required} is required. Current version: $python_version"
+    echo "Python ${python_version_required} is required. Current version: $python_version"
     exit 1
 fi
 
@@ -35,7 +35,7 @@ log_error() {
 git_submodule_init() {
     cd "$dir_sources"
     if [ ! -d ".git" ]; then
-        log_error "Not a git repository. Initializing git repository."
+        log_warn "Not a git repository. Initializing git repository."
         git config --global init.defaultBranch main
         git init
     fi
