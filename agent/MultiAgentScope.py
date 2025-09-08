@@ -83,11 +83,11 @@ class RouterAgent(AgentBase):
 class MasterAgent(AgentBase):
     def __init__(self) -> None:
         super().__init__()
-        self.toolkit = Toolkit()
-        self.toolkit.register_tool_function(execute_python_code)
-        self.toolkit.register_tool_function(execute_shell_command)
-        self.toolkit.register_tool_function(view_text_file)
-        self.toolkit.register_tool_function(write_text_file)
+        # self.toolkit = Toolkit()
+        # self.toolkit.register_tool_function(execute_python_code)
+        # self.toolkit.register_tool_function(execute_shell_command)
+        # self.toolkit.register_tool_function(view_text_file)
+        # self.toolkit.register_tool_function(write_text_file)
 
         self.agent = ReActAgent(
             name="master_agent",
@@ -102,7 +102,7 @@ class MasterAgent(AgentBase):
             ),
             memory=InMemoryMemory(),
             formatter=DashScopeChatFormatter(),
-            toolkit=self.toolkit
+            # toolkit=self.toolkit
         )
     
     async def start(self: AgentBase, task_description: str) -> None:
@@ -126,7 +126,7 @@ class MasterAgent(AgentBase):
 
             summary_req = []
             role = RoleAgent(role_name, role_description)
-            role_msg_res = await role(Msg(
+            role_msg_res = await role.play(Msg(
                     name="master_agent",
                     role="assistant",
                     content=task_description
@@ -172,8 +172,8 @@ class MasterAgent(AgentBase):
 class RoleAgent(AgentBase):
     def __init__(self, name: str, role_description: str) -> None:
         super().__init__()
-        toolkit = Toolkit()
-        toolkit.register_tool_function(execute_python_code)
+        # toolkit = Toolkit()
+        # toolkit.register_tool_function(execute_python_code)
         self.name = name
         self.role = ReActAgent(
             name=name,
@@ -184,7 +184,7 @@ class RoleAgent(AgentBase):
                 stream=STREAMING,
             ),
             formatter=DashScopeChatFormatter(),
-            toolkit=toolkit,
+            # toolkit=toolkit,
         )
     # 创建子智能体的工具函数
     async def play(
